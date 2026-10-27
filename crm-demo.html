@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Dashboard v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Space Grotesk has no Cyrillic: Russian display text falls back to Inter Tight 600–700 -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter+Tight:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Project Dashboard v2 — standalone UI prototype (stage 1: static layout).
+   All selectors are scoped to .pd2 / pd2-* so nothing leaks into the CRM on later integration. */
+:root{
+  --pr-bg:#F5F6F8;
+  --pr-surface:#FFFFFF;
+  --pr-surface-muted:#EFF1F4;
+  --pr-ink:#11151D;
+  --pr-ink-muted:#677083;
+  --pr-line:#E7E9EE;
+  --pr-brand:#315DFA; /* Project Room cobalt — never changes per project */
+  --pr-blue-soft:#86A4FF;
+  --pr-blue-gray:#A9B3C7;
+  --pr-risk:#CE6477;
+  --pr-dark:#11161E;
+  --pr-dark-panel:#19202B;
+  --pr-dark-text:#F4F6FA;
+  --pr-dark-muted:#A9B2C3;
+  --pr-radius:17px;
+  --pr-gap:14px;
+
+  --pd2-f-display:'Space Grotesk','Inter Tight',system-ui,sans-serif;
+  --pd2-f-ui:'Inter Tight',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --pd2-f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --pd2-shadow:0 8px 28px rgba(16,22,35,.035);
+  --pd2-cobalt-tint:color-mix(in srgb,var(--pr-brand) 10%,#fff);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--pr-bg);color:var(--pr-ink);font:400 14px/1.4 var(--pd2-f-ui);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.pd2 :focus-visible{outline:2px solid var(--pr-brand);outline-offset:2px}
+.pd2-num{font-family:var(--pd2-f-display);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+
+/* ---------- global navigation (existing IA: Обзор · Календарь · База подрядчиков) ---------- */
+.pd2-top{border-bottom:1px solid var(--pr-line)}
+.pd2-top-in{max-width:1440px;margin:0 auto;height:68px;padding:0 32px;display:flex;align-items:center;gap:16px}
+.pd2-brand{display:flex;align-items:center;gap:14px;font-weight:600;font-size:14px;white-space:nowrap}
+.pd2-brand-mark{width:40px;height:40px;border-radius:10px;background:var(--pr-ink);color:#fff;display:grid;place-items:center;font:700 22px/1 var(--pd2-f-display)}
+.pd2-nav{display:flex;gap:4px;margin-left:28px}
+.pd2-nav button{height:40px;padding:0 18px;border-radius:20px;font-size:14px;font-weight:500;color:var(--pr-ink);white-space:nowrap;transition:background-color 140ms}
+.pd2-nav button:hover{background:var(--pr-surface-muted)}
+.pd2-nav button[aria-current="page"]{background:var(--pd2-cobalt-tint);color:var(--pr-brand);font-weight:600}
+.pd2-top-actions{margin-left:auto;display:flex;align-items:center;gap:12px}
+.pd2-circle{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--pr-surface);border:1px solid var(--pr-line);flex:none}
+.pd2-avatar{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--pr-ink);color:#fff;font-weight:600;font-size:16px;flex:none}
+
+/* ---------- page ---------- */
+.pd2-page{max-width:1440px;margin:0 auto;padding:16px 32px 32px;
+  /* project accent: set per project (data → --project-accent); shades derive here, so one value recolours everything */
+  --project-accent:var(--pr-brand);
+  --project-accent-soft:color-mix(in srgb,var(--project-accent) 60%,#fff);
+  --project-accent-muted:color-mix(in srgb,var(--project-accent) 50%,var(--pr-blue-gray))}
+
+/* ---------- project header ---------- */
+.pd2-head{display:flex;align-items:center;gap:20px;min-height:96px;margin-bottom:12px}
+.pd2-back{width:44px;height:44px}
+.pd2-logo{width:84px;height:84px;border-radius:50%;object-fit:cover;flex:none;display:block;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-user-drag:none}
+.pd2-id{min-width:0;display:flex;flex-direction:column;gap:4px}
+.pd2-kicker{font-size:12px;color:var(--pr-ink-muted);letter-spacing:.01em}
+.pd2-title-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;row-gap:8px}
+.pd2-title{margin:0;font:700 40px/1.08 var(--pd2-f-display);letter-spacing:-.02em}
+.pd2-status{display:inline-flex;align-items:center;gap:10px;height:34px;padding:0 16px;border-radius:17px;background:var(--pr-surface-muted);font-size:14px;font-weight:500;white-space:nowrap}
+.pd2-status i{width:8px;height:8px;border-radius:50%;background:var(--pr-brand)}
+.pd2-meta{font-size:14px;color:var(--pr-ink-muted);display:flex;flex-wrap:wrap;gap:0 10px}
+.pd2-meta span+span::before{content:"·";margin-right:10px}
+.pd2-head-actions{margin-left:auto;display:flex;align-items:center;gap:16px;flex:none}
+.pd2-cta{display:inline-flex;align-items:center;gap:12px;height:44px;padding:0 24px;border-radius:22px;background:var(--pr-ink);color:#fff;font-size:14px;font-weight:500;white-space:nowrap}
+.pd2-cta svg{transition:transform 140ms}
+
+/* ---------- grid: column bands shared by both card rows ---------- */
+.pd2-grid{display:grid;gap:var(--pr-gap);
+  grid-template-columns:485fr 300fr 222fr 394fr;
+  grid-template-areas:
+    "ready dayx dayx partner"
+    "dirs  dirs focus focus"
+    "chart chart chart chart"}
+.pd2-card{background:var(--pr-surface);border:1px solid var(--pr-line);border-radius:var(--pr-radius);box-shadow:var(--pd2-shadow);padding:20px 24px;min-width:0;position:relative}
+.pd2-card-h{display:flex;align-items:center;gap:12px;min-height:32px}
+.pd2-card-h h2{margin:0;font-size:16px;font-weight:600;letter-spacing:-.005em}
+.pd2-go{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--pr-line);background:var(--pr-surface);margin-left:auto;flex:none}
+.pd2-chip{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border-radius:10px;font-size:14px;font-weight:500;white-space:nowrap;background:var(--pr-surface-muted);color:var(--pr-ink)}
+.pd2-chip.is-work{background:var(--pd2-cobalt-tint);color:var(--pr-brand)}
+.pd2-chip.is-risk{background:var(--pr-ink);color:#fff}
+
+/* A. Готовность */
+.pd2-ready{grid-area:ready;min-height:256px}
+.pd2-ready-body{display:flex;align-items:center;gap:34px;margin-top:8px}
+.pd2-ring{position:relative;width:176px;height:176px;flex:none}
+.pd2-ring svg{display:block;width:100%;height:100%;transform:rotate(-90deg)}
+.pd2-ring-track{stroke:var(--pr-line)}
+.pd2-ring-arc{stroke:var(--project-accent)}
+.pd2-ring-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.pd2-ring-c b{font-size:52px;font-weight:700;line-height:1}
+.pd2-ring-c small{margin-top:8px;font-size:13px;color:var(--pr-ink-muted)}
+.pd2-ws{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
+.pd2-ws-row{display:grid;grid-template-columns:1fr auto;row-gap:9px;font-size:14px}
+.pd2-ws-row b{font-weight:600;font-variant-numeric:tabular-nums}
+.pd2-bar{grid-column:1/-1;height:4px;border-radius:2px;background:var(--pr-line);overflow:hidden}
+.pd2-bar i{display:block;height:100%;border-radius:2px;background:var(--project-accent)}
+
+/* B. Day X */
+.pd2-dayx{grid-area:dayx;min-height:256px;background:var(--pr-dark);border-color:var(--pr-dark);color:var(--pr-dark-text);display:flex;flex-direction:column;overflow:hidden;isolation:isolate}
+/* photo anchored right, its own left edge fades into the card; ::after keeps the counter and route legible */
+.pd2-dayx.has-visual::before,.pd2-dayx.has-visual::after{content:"";position:absolute;z-index:-1;pointer-events:none}
+.pd2-dayx.has-visual::before{top:50%;right:-80px;height:135%;aspect-ratio:1536/1024;transform:translateY(-50%);
+  background:linear-gradient(90deg,var(--pr-dark) 0,var(--pr-dark) 16%,rgba(17,22,30,0) 46%),var(--pd2-visual) center/cover no-repeat}
+.pd2-dayx.has-visual::after{inset:0;background:linear-gradient(0deg,rgba(17,22,30,.95) 0,rgba(17,22,30,.82) 24%,rgba(17,22,30,0) 52%),linear-gradient(90deg,var(--pr-dark) 0,var(--pr-dark) 22%,rgba(17,22,30,.5) 40%,rgba(17,22,30,0) 60%)}
+.pd2-dayx .pd2-card-h h2{font-family:var(--pd2-f-display);font-weight:600;letter-spacing:.02em}
+.pd2-dayx .pd2-go{background:var(--pr-dark-text);border-color:var(--pr-dark-text);color:var(--pr-ink)}
+.pd2-count{display:flex;align-items:flex-end;gap:16px;margin-top:10px}
+.pd2-count b{font-size:76px;font-weight:700;line-height:.86}
+.pd2-count span{font-size:16px;line-height:1.3;padding-bottom:2px}
+.pd2-dayx-date{margin-top:14px;font:400 14px/1.3 var(--pd2-f-mono);color:var(--pr-dark-text)}
+.pd2-route-scroll{margin-top:auto}
+.pd2-route{margin:0 -14px;padding-top:20px;display:grid;position:relative}
+.pd2-route-line{position:absolute;top:calc(20px + 11px);height:1px;background:rgba(255,255,255,.16)}
+.pd2-route-line.is-done{background:rgba(255,255,255,.38)}
+.pd2-route-line.is-active{background:var(--project-accent)}
+.pd2-route-mid{position:absolute;top:calc(20px + 9px);width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.3);transform:translateX(-50%)}
+.pd2-route-mid.is-done{background:rgba(255,255,255,.7)}
+.pd2-route-mid.is-active{background:var(--project-accent-soft)}
+.pd2-stage{display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;font-size:12px;letter-spacing:-.01em;color:rgba(244,246,250,.82);text-align:center;white-space:nowrap;min-width:0}
+.pd2-stage i{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);background:var(--pr-dark)}
+.pd2-stage.is-future{color:var(--pr-dark-muted);opacity:.7}
+.pd2-stage.is-future i{border-color:rgba(255,255,255,.22)}
+.pd2-stage.is-current{color:var(--pr-dark-text);font-weight:600}
+.pd2-stage.is-current i{border:0;background:var(--project-accent);box-shadow:inset 0 0 0 7px var(--project-accent),inset 0 0 0 11px #fff,0 0 0 4px color-mix(in srgb,var(--project-accent-muted) 45%,transparent)}
+
+/* C. Статус партнера */
+.pd2-partner{grid-area:partner;min-height:256px;display:flex;flex-direction:column}
+.pd2-partner .pd2-go{margin-left:0}
+.pd2-partner .pd2-chip{margin-left:auto}
+.pd2-wait{display:flex;align-items:center;gap:22px;margin-top:12px}
+.pd2-wait b{font-size:76px;font-weight:700;line-height:.86}
+.pd2-wait span{font-size:20px;line-height:1.25;color:var(--pr-ink-muted)}
+.pd2-seg{display:flex;gap:2px;height:12px;margin-top:20px;border-radius:6px;overflow:hidden}
+.pd2-seg i{display:block;height:100%}
+.pd2-seg .s-got{background:var(--project-accent)}
+.pd2-seg .s-wait{background:var(--project-accent-soft)}
+.pd2-seg .s-over{background:var(--pr-ink)}
+.pd2-pstats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:auto;padding-top:16px}
+.pd2-pstats div{display:flex;flex-direction:column;gap:4px}
+.pd2-pstats b{font-size:30px;font-weight:600;line-height:1}
+.pd2-pstats span{font-size:13px;color:var(--pr-ink-muted)}
+
+/* D. Ключевые направления */
+.pd2-dirs{grid-area:dirs;min-height:240px}
+.pd2-table{margin-top:4px}
+.pd2-tr{display:grid;grid-template-columns:minmax(96px,150px) minmax(140px,1fr) 64px 112px 64px;align-items:center;column-gap:24px;height:48px;border-bottom:1px solid var(--pr-line);font-size:15px}
+.pd2-tr:last-child{border-bottom:0}
+.pd2-tr-name{font-weight:500}
+.pd2-spark{display:block;width:100%;max-width:240px;height:34px;justify-self:center}
+.pd2-tr-pct{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.pd2-tr .pd2-chip{height:34px;width:100%}
+.pd2-tr-date{text-align:right;color:var(--pr-ink-muted);font-size:14px;font-variant-numeric:tabular-nums}
+
+/* E. В фокусе */
+.pd2-focus{grid-area:focus;min-height:240px;display:flex;flex-direction:column;background:var(--pr-dark);border-color:var(--pr-dark);color:var(--pr-dark-text);overflow:hidden;isolation:isolate}
+/* photo sits behind the content, anchored to the right edge; its own left part fades into the card */
+.pd2-focus.has-visual::before{content:"";position:absolute;top:0;bottom:0;right:0;height:100%;aspect-ratio:1742/903;z-index:-1;pointer-events:none;transform:translateX(22%);
+  background:linear-gradient(90deg,var(--pr-dark) 0,rgba(17,22,30,0) 48%),var(--pd2-visual) center/cover no-repeat}
+.pd2-focus .pd2-go{background:var(--pr-dark-text);border-color:var(--pr-dark-text);color:var(--pr-ink)}
+.pd2-focus-n{margin-top:6px;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.pd2-focus h3{margin:4px 0 0;max-width:430px;font:600 27px/1.1 var(--pd2-f-display);letter-spacing:-.015em}
+.pd2-focus.has-visual h3{max-width:380px}
+.pd2-focus-meta{margin-top:8px;font-size:14px;color:var(--pr-dark-muted);display:flex;flex-wrap:wrap;gap:0 10px}
+.pd2-focus-meta b{color:var(--pr-dark-text);font-weight:500}
+.pd2-focus-meta span+span::before{content:"·";margin-right:10px}
+.pd2-focus-foot{margin-top:auto;padding-top:12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.pd2-counters{display:flex;gap:12px;flex-wrap:wrap}
+.pd2-counter{display:flex;align-items:center;gap:10px;min-width:150px;padding:4px 14px 4px 12px;border-radius:12px;background:var(--pr-dark-panel);border:1px solid rgba(255,255,255,.08)}
+.pd2-counter div{display:flex;flex-direction:column;line-height:1.2}
+.pd2-counter b{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.pd2-counter small{font-size:12px;color:var(--pr-dark-muted)}
+.pd2-focus-foot .pd2-cta{flex:none;height:42px;background:var(--pr-dark-text);color:var(--pr-ink)}
+
+/* F. Динамика проекта */
+.pd2-chart{grid-area:chart;background:var(--pr-dark);border-color:var(--pr-dark);color:var(--pr-dark-text);padding:20px 26px 18px;min-height:240px}
+.pd2-chart-h{display:flex;align-items:flex-start;gap:16px}
+.pd2-chart-h h2{margin:0;font-size:17px;font-weight:600}
+.pd2-chart-h p{margin:3px 0 0;font-size:12.5px;color:var(--pr-dark-muted);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.pd2-demo{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:6px;border:1px solid rgba(255,255,255,.14);font-size:11.5px;color:var(--pr-dark-muted)}
+.pd2-periods{margin-left:auto;display:flex;gap:2px;padding:4px;border-radius:12px;background:var(--pr-dark-panel);border:1px solid rgba(255,255,255,.07)}
+.pd2-periods button{height:34px;min-width:46px;padding:0 10px;border-radius:9px;font-size:14px;font-weight:500;color:var(--pr-dark-text)}
+.pd2-periods button[aria-pressed="true"]{background:var(--pr-dark-text);color:var(--pr-ink);font-weight:600}
+.pd2-chart .pd2-go{width:36px;height:36px;margin-left:0;background:transparent;border-color:rgba(255,255,255,.22);color:var(--pr-dark-text)}
+.pd2-plot{position:relative;height:166px;margin-top:6px}
+.pd2-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.pd2-axis{font:400 12px/1 var(--pd2-f-ui);fill:var(--pr-dark-muted)}
+.pd2-tip{position:absolute;width:170px;padding:9px 12px 10px;border-radius:10px;background:var(--pr-dark-panel);border:1px solid rgba(255,255,255,.08);font-size:12.5px;pointer-events:none}
+.pd2-tip time{display:block;margin-bottom:6px;font:400 11.5px/1 var(--pd2-f-mono);color:var(--pr-dark-muted)}
+.pd2-tip div{display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:8px;line-height:22px}
+.pd2-tip b{font-weight:600;font-variant-numeric:tabular-nums}
+.pd2-dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.pd2-dot.is-dash{background:none;border:1.5px dashed var(--pr-blue-gray)}
+.pd2-legend{display:flex;flex-wrap:wrap;gap:6px 28px;margin-top:14px}
+.pd2-legend button{display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--pr-dark-muted)}
+.pd2-legend button[aria-pressed="true"]{color:var(--pr-dark-text)}
+.pd2-legend button[aria-disabled="true"]{cursor:default;opacity:.55}
+.pd2-legend em{font-style:normal;font-size:11.5px;padding:1px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.14)}
+.pd2-chart{--motion-standard:240ms;--motion-ease:cubic-bezier(.22,1,.36,1)}
+.pd2-chart .pd2-motion{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex:none;border:1px solid rgba(255,255,255,.22);color:var(--pr-dark-text);transition:background-color 140ms}
+.pd2-chart .pd2-motion:hover{background:rgba(255,255,255,.06)}
+.pd2-chart .pd2-motion:disabled{opacity:.4;cursor:default}
+.pd2-plot:focus-visible{outline:2px solid var(--pr-blue-soft);outline-offset:4px;border-radius:6px}
+.pd2-anim{transition:opacity 200ms var(--motion-ease)}
+.pd2-series{transition:opacity var(--motion-standard) var(--motion-ease)}
+.pd2-series.is-off{opacity:0}
+.pd2-axis-cnt{transition:opacity var(--motion-standard)}
+.pd2-inspect{opacity:0;transition:opacity 120ms}
+.pd2-inspect.is-on{opacity:1}
+.pd2-tip{opacity:0;transition:opacity 120ms}
+.pd2-tip.is-on{opacity:1}
+.pd2-tip-x{display:none;position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:6px;place-items:center;font-size:15px;line-height:1;color:var(--pr-dark-muted);pointer-events:auto}
+.pd2-tip-x:hover{color:var(--pr-dark-text);background:rgba(255,255,255,.06)}
+.pd2-tip.is-pinned .pd2-tip-x{display:grid}
+.pd2-tip.is-pinned time{padding-right:20px}
+.pd2-legend button[aria-pressed="false"]:not([aria-disabled]) .pd2-dot{opacity:.35}
+.pd2-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.pd2-chart *{transition:none!important}}
+
+/* ---------- Stage 3: one-shot entrance, data reveal, microinteractions, material light ---------- */
+.pd2{--pd2-ease:cubic-bezier(.22,1,.36,1)}
+@keyframes pd2-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes pd2-grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes pd2-wipe{from{-webkit-clip-path:inset(0 100% 0 0);clip-path:inset(0 100% 0 0)}to{-webkit-clip-path:inset(0 0 0 0);clip-path:inset(0 0 0 0)}}
+@media (prefers-reduced-motion:no-preference){
+  .pd2-enter [data-enter]{animation:pd2-in 520ms var(--pd2-ease) var(--d,0ms) both}
+  .pd2-enter .pd2-chart[data-enter]{animation-duration:800ms}
+  .pd2-enter [data-enter].is-in{animation:none} /* each block is fully interactive (hover lift too) as soon as it has landed */
+  .pd2-enter .pd2-bar i{transform-origin:left center;animation:pd2-grow 560ms var(--pd2-ease) var(--d,300ms) both}
+  .pd2-enter .pd2-seg{animation:pd2-wipe 600ms var(--pd2-ease) var(--d,400ms) both}
+  .pd2-enter .pd2-spark{animation:pd2-wipe 520ms var(--pd2-ease) var(--d,460ms) both}
+}
+.pd2-card{transition:transform 200ms var(--pd2-ease),box-shadow 200ms var(--pd2-ease)}
+.pd2-go svg,.pd2-back svg{transition:transform 160ms var(--pd2-ease)}
+.pd2-chip,.pd2-status{transition:background-color 160ms,color 160ms}
+.pd2-focus-foot .pd2-cta{transition:background-color 160ms}
+@media (hover:hover) and (pointer:fine){
+  .pd2-status:hover{background:color-mix(in srgb,var(--pr-surface-muted) 93%,#000)}
+  .pd2-chip:hover,.pd2-tr:hover .pd2-chip{background:color-mix(in srgb,var(--pr-surface-muted) 93%,#000)}
+  .pd2-chip.is-work:hover,.pd2-tr:hover .pd2-chip.is-work{background:color-mix(in srgb,var(--pr-brand) 16%,#fff)}
+  .pd2-chip.is-risk:hover,.pd2-tr:hover .pd2-chip.is-risk{background:#000}
+  .pd2-focus-foot .pd2-cta:hover{background:color-mix(in srgb,var(--pr-dark-text) 93%,#000)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference){
+  .pd2-card:not(.pd2-chart):hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(16,22,35,.07)}
+  .pd2-go:hover svg{transform:translate(1.5px,-1.5px)}
+  .pd2-cta:hover svg{transform:translateX(2px)}
+  .pd2-back:hover svg{transform:translateX(-2px)}
+}
+/* light pass over the photo zone on pointer entry; the photo itself never moves */
+.pd2-glare{position:absolute;top:0;bottom:0;right:0;left:36%;overflow:hidden;z-index:-1;pointer-events:none}
+.pd2-focus .pd2-glare{left:52%}
+.pd2-glare i{position:absolute;inset:0;opacity:0;transform:translateX(-110%);background:linear-gradient(105deg,rgba(255,255,255,0) 32%,rgba(255,255,255,.10) 50%,rgba(255,255,255,0) 68%)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1279px){
+  .pd2-grid{grid-template-columns:repeat(12,1fr);
+    grid-template-areas:
+      "ready ready ready ready ready dayx dayx dayx dayx dayx dayx dayx"
+      "partner partner partner partner partner partner partner partner partner partner partner partner"
+      "dirs dirs dirs dirs dirs dirs dirs dirs dirs dirs dirs dirs"
+      "focus focus focus focus focus focus focus focus focus focus focus focus"
+      "chart chart chart chart chart chart chart chart chart chart chart chart"}
+  .pd2-partner{min-height:0}
+}
+@media (max-width:959px){
+  .pd2-grid{grid-template-columns:1fr 1fr;
+    grid-template-areas:"dayx dayx" "ready partner" "focus focus" "dirs dirs" "chart chart"}
+  .pd2-ready-body{flex-direction:column;align-items:stretch;gap:22px}
+  .pd2-ring{align-self:center}
+  .pd2-head{flex-wrap:wrap}
+  .pd2-head-actions{margin-left:0;width:100%}
+  .pd2-nav{margin-left:8px}
+}
+@media (max-width:639px){
+  .pd2-top-in,.pd2-page{padding-left:16px;padding-right:16px}
+  .pd2-brand span:not(.pd2-brand-mark){display:none}
+  .pd2-nav{margin-left:0;overflow-x:auto;scrollbar-width:none}
+  .pd2-nav button{padding:0 12px}
+  .pd2-top-actions .pd2-circle{display:none}
+  .pd2-grid{grid-template-columns:1fr;grid-template-areas:"dayx" "ready" "partner" "focus" "dirs" "chart"}
+  .pd2-head{gap:14px}
+  .pd2-logo{width:56px;height:56px}
+  .pd2-title{font-size:30px}
+  .pd2-cta{flex:1;justify-content:center}
+  .pd2-card{padding:20px}
+  .pd2-count b,.pd2-wait b{font-size:64px}
+  .pd2-route-scroll{overflow-x:auto;margin-left:-20px;margin-right:-20px;padding:0 6px;scrollbar-width:none}
+  .pd2-route{min-width:520px;margin:0}
+  .pd2-dayx.has-visual::before{right:-48px;height:100%}
+  .pd2-dayx.has-visual::after{background:linear-gradient(0deg,rgba(17,22,30,.95) 0,rgba(17,22,30,.82) 24%,rgba(17,22,30,0) 52%),linear-gradient(90deg,var(--pr-dark) 0,var(--pr-dark) 40%,rgba(17,22,30,.5) 62%,rgba(17,22,30,0) 85%)}
+  /* phone: the photo becomes a strip under the content instead of sitting behind the text */
+  .pd2-focus.has-visual{padding-bottom:196px}
+  .pd2-focus .pd2-glare{top:auto;left:0;height:184px}
+  .pd2-focus.has-visual::before{top:auto;left:0;height:184px;aspect-ratio:auto;transform:none;
+    background:linear-gradient(180deg,var(--pr-dark) 0,rgba(17,22,30,0) 34%),var(--pd2-visual) 74% 100%/auto 125% no-repeat}
+  .pd2-table{overflow-x:auto;margin-left:-20px;margin-right:-20px;padding:0 20px}
+  .pd2-tr{min-width:560px}
+  .pd2-chart-h{flex-wrap:wrap}
+  .pd2-periods{margin-left:0;order:3;width:100%;justify-content:space-between}
+  .pd2-chart .pd2-motion{margin-left:auto}
+  .pd2-plot{height:210px}
+}
+</style>
+</head>
+<body>
+<div class="pd2 pd2-enter">
+
+<header class="pd2-top">
+  <div class="pd2-top-in">
+    <div class="pd2-brand"><span class="pd2-brand-mark" aria-hidden="true">K</span><span>Project Room</span></div>
+    <nav class="pd2-nav" aria-label="Основная навигация">
+      <button type="button" aria-current="page">Обзор</button>
+      <button type="button">Календарь</button>
+      <button type="button">База подрядчиков</button>
+    </nav>
+    <div class="pd2-top-actions">
+      <button type="button" class="pd2-circle" aria-label="Настройки"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M3 6h9m4 0h1M3 14h1m4 0h9"/><circle cx="14" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="14" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+      <button type="button" class="pd2-avatar" id="pd2User" aria-label="Профиль">Т</button>
+    </div>
+  </div>
+</header>
+
+<main class="pd2-page" aria-label="Дашборд проекта">
+  <section class="pd2-head" aria-label="Проект" data-enter style="--d:0ms">
+    <button type="button" class="pd2-circle pd2-back" aria-label="← Обзор" title="Обзор"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M15 9H3m5-5L3 9l5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <img class="pd2-logo" id="pd2Logo" alt="" hidden>
+    <div class="pd2-id">
+      <span class="pd2-kicker">Проект · демонстрационные данные</span>
+      <div class="pd2-title-row">
+        <h1 class="pd2-title" id="pd2Name"></h1>
+        <span class="pd2-status"><i aria-hidden="true"></i><span id="pd2Status"></span></span>
+      </div>
+      <div class="pd2-meta" id="pd2Meta"></div>
+    </div>
+    <div class="pd2-head-actions">
+      <button type="button" class="pd2-cta">Открыть рабочее пространство <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11m-4-4.5L13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="pd2-circle" aria-label="Действия с проектом"><svg width="20" height="4" viewBox="0 0 20 4" aria-hidden="true"><circle cx="2" cy="2" r="2" fill="currentColor"/><circle cx="10" cy="2" r="2" fill="currentColor"/><circle cx="18" cy="2" r="2" fill="currentColor"/></svg></button>
+    </div>
+  </section>
+
+  <div class="pd2-grid">
+    <section class="pd2-card pd2-ready" data-enter style="--d:180ms" aria-labelledby="pd2ReadyH">
+      <div class="pd2-card-h"><h2 id="pd2ReadyH">Готовность к запуску</h2></div>
+      <div class="pd2-ready-body">
+        <div class="pd2-ring" id="pd2Ring"></div>
+        <div class="pd2-ws" id="pd2Ws"></div>
+      </div>
+    </section>
+
+    <section class="pd2-card pd2-dayx" data-enter style="--d:320ms" aria-labelledby="pd2DayxH">
+      <div class="pd2-card-h"><h2 id="pd2DayxH">DAY X</h2><button type="button" class="pd2-go" aria-label="Открыть этапы проекта">ARROW</button></div>
+      <div id="pd2Dayx"></div>
+      <div class="pd2-route-scroll"><div class="pd2-route" id="pd2Route" aria-label="Этапы проекта"></div></div>
+    </section>
+
+    <section class="pd2-card pd2-partner" data-enter style="--d:460ms" aria-labelledby="pd2PartnerH">
+      <div class="pd2-card-h"><h2 id="pd2PartnerH">Статус партнера</h2><span class="pd2-chip" id="pd2PartnerState"></span><button type="button" class="pd2-go" aria-label="Открыть ожидания от партнера">ARROW</button></div>
+      <div id="pd2Partner" style="display:contents"></div>
+    </section>
+
+    <section class="pd2-card pd2-dirs" data-enter style="--d:600ms" aria-labelledby="pd2DirsH">
+      <div class="pd2-card-h"><h2 id="pd2DirsH">Ключевые направления</h2></div>
+      <div class="pd2-table" id="pd2Dirs" role="table" aria-label="Ключевые направления"></div>
+    </section>
+
+    <section class="pd2-card pd2-focus" data-enter style="--d:740ms" aria-labelledby="pd2FocusH">
+      <div class="pd2-card-h"><h2 id="pd2FocusH">В фокусе</h2><button type="button" class="pd2-go" aria-label="Открыть задачу в рабочем пространстве">ARROW</button></div>
+      <div id="pd2Focus" style="display:contents"></div>
+    </section>
+
+    <section class="pd2-card pd2-chart" data-enter style="--d:880ms" aria-labelledby="pd2ChartH">
+      <div class="pd2-chart-h">
+        <div>
+          <h2 id="pd2ChartH">Динамика проекта</h2>
+          <p>Готовность, согласования и риски <span class="pd2-demo">Демонстрационные данные</span><span id="pd2HistNote" hidden></span></p>
+        </div>
+        <div class="pd2-periods" role="group" aria-label="Период">
+          <button type="button" aria-pressed="false">7Д</button>
+          <button type="button" aria-pressed="true">1М</button>
+          <button type="button" aria-pressed="false">3М</button>
+          <button type="button" aria-pressed="false">6М</button>
+          <button type="button" aria-pressed="false">1Г</button>
+        </div>
+        <button type="button" class="pd2-motion" id="pd2Motion" aria-pressed="true" aria-label="Движение графика"></button>
+        <button type="button" class="pd2-go" aria-label="Развернуть график">ARROW</button>
+      </div>
+      <div class="pd2-plot" id="pd2Plot"></div>
+      <div class="pd2-legend" id="pd2Legend"></div>
+      <div class="pd2-sr" id="pd2ChartLive" aria-live="polite"></div>
+    </section>
+  </div>
+</main>
+</div>
+
+<script>
+(()=>{
+'use strict';
+/* ================= DEMO DATA — Демонстрационные данные =================
+   Not read from or written to CRM storage. Dates are relative to "today" so the
+   preview stays coherent; every number below is consistent with the others
+   (19/31 tasks = 61% = last readiness point; 1 risk = OPS risk = focus task). */
+const DAY=864e5;
+const today=(()=>{const t=new Date();t.setHours(0,0,0,0);return t})();
+const rel=n=>new Date(+today+n*DAY);
+
+const DEMO={
+  project:{name:'День Фармацевта',partner:'Фармстандарт',department:'Спецпроекты',status:'В работе',date:rel(19),
+    accentColor:'#4FC1B3', // project accent (preliminary shade); absent → Project Room cobalt
+    logo:'assets/farmstandart_logo.png', // explicit demo binding; projects without a logo show text only
+    visuals:{dayx:'assets/dayx-metal-acrylic.png',focus:'assets/focus-cat-call.png'}}, // approved per-project art; absent → plain dark card
+  stages:{labels:['Бриф','Согласование','Производство','Подготовка','Day X','Финал'],current:3},
+  tasks:{done:19,total:31},
+  workstreams:[
+    {name:'Партнер',  done:6,total:9,status:'wait',due:rel(6), spark:[40,44,52,55,50,58,63,67]},
+    {name:'Маркетинг',done:5,total:8,status:'work',due:rel(9), spark:[30,35,41,48,52,50,58,63]},
+    {name:'EXP',      done:5,total:7,status:'ok',  due:null,   spark:[38,46,50,57,62,66,69,71]},
+    {name:'OPS',      done:3,total:7,status:'risk',due:rel(2), spark:[35,40,46,44,38,40,45,43]}
+  ],
+  partner:{state:'В работе',received:6,waiting:3,overdue:1},
+  focus:{title:'Согласовать с партнером план застройки',who:'Ждем партнера',due:rel(2),awaiting:4,risks:1},
+  history:{ // one snapshot per day from project kickoff (100 days ago) to today
+    from:rel(-100),
+    readiness:[0,0,0,1,1,1,1,2,2,2,2,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,9,9,9,10,11,11,12,12,12,12,12,12,12,12,13,13,14,15,15,15,15,15,15,16,16,17,18,19,20,20,21,21,20,20,20,20,21,22,22,
+      24,26,27,29,32,34,35,37,39,40,38,36,37,40,43,45,46,48,50,44,42,44,47,50,52,53,55,57,58,60,61],
+    approvals:[0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8,8,8,8,9,9,9,10,10,10,11,11,12,12,12,12,12,12,12,12,13,13,13,14,14,15,15,16,16,16,16,
+      18,18,20,22,22,25,27,27,29,30,30,31,33,33,35,36,36,38,40,40,41,43,44,44,46,48,49,50,52,53,54],
+    risks:    [0,1,1,1,2,2,2,1,1,1,1,1,0,0,0,0,0,1,1,1,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,2,2,2,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,3,3,3,4,4,4,4,4,4,4,4,3,3,3,
+      3,3,3,4,4,4,3,3,3,3,4,4,4,3,3,2,2,2,2,3,3,3,2,2,2,2,2,1,1,1,1]
+  }
+};
+
+/* ================= helpers ================= */
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const pl=(n,a,b,c)=>{const m=Math.abs(n)%100,k=m%10;return m>10&&m<20?c:k===1?a:k>=2&&k<=4?b:c};
+const pct=(d,t)=>t?Math.round(d/t*100):null;
+const MON=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const fmtShort=d=>`${d.getDate()} ${MON[d.getMonth()]}`;
+const fmtDay=d=>d.toLocaleDateString('ru-RU',{day:'numeric',month:'long'});
+const fmtLong=d=>d.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}).replace(' г.','');
+const ARROW='<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.5 10.5l7-7M5 3.5h5.5V9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const ARROW_R='<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11m-4-4.5L13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+document.querySelectorAll('.pd2-go').forEach(b=>b.innerHTML=ARROW);
+
+/* Monotone cubic (Fritsch–Carlson): passes through every anchor, never overshoots between them. */
+function monotonePath(pts){
+  const n=pts.length;if(n<2)return'';
+  const dx=[],m=[],t=[];
+  for(let i=0;i<n-1;i++){dx[i]=pts[i+1][0]-pts[i][0];m[i]=(pts[i+1][1]-pts[i][1])/dx[i]}
+  t[0]=m[0];t[n-1]=m[n-2];
+  for(let i=1;i<n-1;i++)t[i]=m[i-1]*m[i]<=0?0:3*(dx[i-1]+dx[i])/((2*dx[i]+dx[i-1])/m[i-1]+(dx[i]+2*dx[i-1])/m[i]);
+  let d=`M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+  for(let i=0;i<n-1;i++){const h=dx[i]/3;
+    d+=`C${(pts[i][0]+h).toFixed(2)},${(pts[i][1]+h*t[i]).toFixed(2)} ${(pts[i+1][0]-h).toFixed(2)},${(pts[i+1][1]-h*t[i+1]).toFixed(2)} ${pts[i+1][0].toFixed(2)},${pts[i+1][1].toFixed(2)}`}
+  return d;
+}
+
+/* ================= header ================= */
+const P=DEMO.project;
+$('#pd2Name').textContent=P.name;
+$('#pd2Status').textContent=P.status;
+$('#pd2Meta').innerHTML=[P.partner,P.department,P.date?fmtLong(P.date):''].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
+/* Project accent → one CSS custom property on the dashboard root (global nav stays Project Room cobalt).
+   ?accent=avito|none|pharm is a demo-only switch to check other projects without touching CSS.
+   TEMPORARY (accent comparison for Фармстандарт): ?accent=a → #4FC1B3 (current), ?accent=b → #20A997. Remove after the choice. */
+const ACCENTS={pharm:'#4FC1B3',avito:'#7955E8',none:'',a:'#4FC1B3',b:'#20A997'};
+function setAccent(hex){const page=$('.pd2-page');/^#[0-9a-f]{6}$/i.test(hex||'')?page.style.setProperty('--project-accent',hex):page.style.removeProperty('--project-accent')}
+{const q=new URLSearchParams(location.search).get('accent');setAccent(q in ACCENTS?ACCENTS[q]:P.accentColor)}
+window.__pd2SetAccent=setAccent;
+if(P.logo){const img=$('#pd2Logo');img.alt=P.partner?`Логотип ${P.partner}`:'';img.onerror=()=>img.remove();img.src=P.logo;img.hidden=false;spinLogo(img)}
+
+/* Partner logo — physical disc on an axle.
+   Each impulse is a short smooth torque pulse (sin-shaped, 240 ms); friction is Coulomb + viscous,
+   so the disc decelerates naturally and stops wherever it is (no snap back). One finite rAF loop,
+   only while the disc moves. Tilt (wobble) scales with speed, so it fades out exactly as it stops. */
+function spinLogo(img){
+  const PHY={impulse:1200,pulse:.24,coulomb:120,viscous:1.0,maxW:2400,tilt:3.5,hoverGap:450};
+  const st={th:0,w:0,ph:0,pulses:[],raf:0,last:0,lastHover:0};
+  const still=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const apply=()=>{const a=PHY.tilt*Math.min(1,Math.abs(st.w)/PHY.impulse),r=st.ph*Math.PI/180;
+    img.style.transform=a>.01
+      ?`perspective(480px) rotate3d(${Math.cos(r).toFixed(4)},${Math.sin(r).toFixed(4)},0,${a.toFixed(3)}deg) rotate(${st.th.toFixed(2)}deg)`
+      :`rotate(${st.th.toFixed(2)}deg)`};
+  const tick=()=>{
+    const now=performance.now(),dt=Math.max(0,Math.min(.05,(now-st.last)/1000));st.last=now;
+    let torque=0;
+    st.pulses=st.pulses.filter(p=>{p.t+=dt;if(p.t>=PHY.pulse)return false;torque+=p.amt*(Math.PI/(2*PHY.pulse))*Math.sin(Math.PI*p.t/PHY.pulse);return true});
+    st.w=Math.max(-PHY.maxW,Math.min(PHY.maxW,st.w+torque*dt));
+    const dec=(PHY.coulomb+PHY.viscous*Math.abs(st.w))*dt;
+    st.w=Math.abs(st.w)<=dec&&!st.pulses.length?0:st.w-Math.sign(st.w)*Math.min(dec,Math.abs(st.w));
+    st.th=(st.th+st.w*dt)%360;
+    st.ph=(st.ph+st.w*dt*.18)%360; // slow precession of the wobble axis
+    apply();
+    if(st.w===0&&!st.pulses.length){st.raf=0;img.style.willChange='';return}
+    st.raf=requestAnimationFrame(tick);
+  };
+  const impulse=dir=>{
+    if(still())return;
+    if(!dir)dir=Math.sign(st.w)||1;                 // a tap pushes the way it already turns
+    st.pulses.push({t:0,amt:dir*PHY.impulse});
+    if(!st.raf){st.last=performance.now();img.style.willChange='transform';st.raf=requestAnimationFrame(tick)}
+  };
+  img.addEventListener('pointerenter',e=>{
+    if(e.pointerType!=='mouse')return;
+    const now=performance.now();if(now-st.lastHover<PHY.hoverGap)return;st.lastHover=now;
+    const b=img.getBoundingClientRect(),rx=e.clientX-(b.left+b.width/2),ry=e.clientY-(b.top+b.height/2);
+    const cross=rx*(e.movementY||0)-ry*(e.movementX||0); // the side the pointer brushes past sets the spin direction
+    impulse(Math.abs(cross)<1?1:Math.sign(cross));
+  });
+  img.addEventListener('pointerdown',()=>impulse(0));
+  img.draggable=false;
+}
+
+/* Material motion: one soft light pass across the photo zone per pointer entry (hover devices only, never on loop) */
+function addGlare(card){
+  if(card.querySelector('.pd2-glare'))return;
+  const box=document.createElement('span');box.className='pd2-glare';box.setAttribute('aria-hidden','true');
+  const band=document.createElement('i');box.appendChild(band);card.appendChild(box);
+  let run=null;
+  card.addEventListener('mouseenter',()=>{
+    if(!matchMedia('(hover:hover) and (pointer:fine)').matches||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    if(run&&run.playState==='running')return;
+    run=band.animate([{transform:'translateX(-110%)',opacity:0},{opacity:1,offset:.35},{opacity:1,offset:.65},{transform:'translateX(110%)',opacity:0}],
+      {duration:1100,easing:'cubic-bezier(.22,1,.36,1)'});
+  });
+}
+
+/* Project visuals: decorative, bound to this project only; nothing is shown if a file is missing */
+function bindVisual(card,src){
+  if(!card||!src)return;
+  const img=new Image();
+  img.onload=()=>{card.style.setProperty('--pd2-visual',`url(${JSON.stringify(src)})`);card.classList.add('has-visual');addGlare(card)};
+  img.src=src;
+}
+bindVisual($('.pd2-dayx'),P.visuals?.dayx);
+bindVisual($('.pd2-focus'),P.visuals?.focus);
+
+/* ================= A. Готовность ================= */
+{
+  const {done,total}=DEMO.tasks,v=pct(done,total),R=84,C=2*Math.PI*R;
+  $('#pd2Ring').innerHTML=`<svg viewBox="0 0 180 180" aria-hidden="true"><circle class="pd2-ring-track" cx="90" cy="90" r="${R}" fill="none" stroke-width="10"/>${v?`<circle class="pd2-ring-arc" cx="90" cy="90" r="${R}" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(C*v/100).toFixed(2)} ${C.toFixed(2)}"/>`:''}</svg>
+  <div class="pd2-ring-c">${v===null?'<b class="pd2-num" style="font-size:24px">Нет задач</b>':`<b class="pd2-num">${v}%</b><small>${done} из ${total} ${pl(total,'задачи','задач','задач')}</small>`}</div>`;
+  $('#pd2Ring').setAttribute('role','img');
+  $('#pd2Ring').setAttribute('aria-label',v===null?'Нет задач':`Готовность ${v}%, выполнено ${done} из ${total}`);
+  $('#pd2Ws').innerHTML=DEMO.workstreams.map(w=>{const p=pct(w.done,w.total);
+    return `<div class="pd2-ws-row"><span>${esc(w.name)}</span><b>${p===null?'—':p+'%'}</b><span class="pd2-bar" aria-hidden="true"><i style="width:${p||0}%"></i></span></div>`}).join('');
+}
+
+/* ================= B. Day X ================= */
+{
+  const dx=P.date,left=dx?Math.round((dx-today)/DAY):null;
+  $('#pd2Dayx').innerHTML=!dx
+    ?`<div class="pd2-count"><span style="font-size:20px">Дата запуска не назначена</span></div>`
+    :`<div class="pd2-count">${left>0
+        ?`<b class="pd2-num">${left}</b><span>${pl(left,'день','дня','дней')}<br>до запуска</span>`
+        :left===0?`<span style="font-size:28px;font-weight:600">Запуск сегодня</span>`
+        :`<span style="font-size:22px">Запуск прошел ${-left} ${pl(-left,'день','дня','дней')} назад</span>`}</div>
+      <div class="pd2-dayx-date">${esc(fmtLong(dx))}</div>`;
+  const {labels,current}=DEMO.stages,n=labels.length,col=100/n,cx=k=>col*k+col/2;
+  let html='';
+  for(let k=0;k<n-1;k++){
+    const cls=k+1<current?'is-done':k+1===current?'is-active':'';
+    html+=`<span class="pd2-route-line ${cls}" style="left:${cx(k)}%;width:${col}%"></span><span class="pd2-route-mid ${cls}" style="left:${cx(k)+col/2}%"></span>`;
+  }
+  html+=labels.map((l,k)=>`<div class="pd2-stage ${k<current?'is-done':k===current?'is-current':'is-future'}" ${k===current?'aria-current="step"':''}><i aria-hidden="true"></i><span>${esc(l)}</span></div>`).join('');
+  const r=$('#pd2Route');r.style.gridTemplateColumns=`repeat(${n},1fr)`;r.innerHTML=html;
+}
+
+/* ================= C. Статус партнера ================= */
+{
+  const {state,received,waiting,overdue}=DEMO.partner,open=waiting+overdue,all=received+open;
+  $('#pd2PartnerState').textContent=state;
+  $('#pd2Partner').innerHTML=`
+    <div class="pd2-wait"><b class="pd2-num">${open}</b><span>${pl(open,'ожидание','ожидания','ожиданий')}<br>от партнера</span></div>
+    <div class="pd2-seg" role="img" aria-label="Получено ${received}, ждем ${waiting}, просрочено ${overdue}">${all?[['s-got',received],['s-wait',waiting],['s-over',overdue]].filter(x=>x[1]).map(([c,v])=>`<i class="${c}" style="flex:${v}"></i>`).join(''):''}</div>
+    <div class="pd2-pstats"><div><b class="pd2-num">${received}</b><span>Получено</span></div><div><b class="pd2-num">${waiting}</b><span>Ждем</span></div><div><b class="pd2-num">${overdue}</b><span>Просрочено</span></div></div>`;
+}
+
+/* ================= D. Ключевые направления ================= */
+{
+  const ST={wait:['Ждем',''],work:['В работе','is-work'],ok:['В порядке',''],risk:['Риск','is-risk']};
+  const W=240,H=34;
+  const spark=(vals,i,risk)=>{
+    const lo=Math.min(...vals),hi=Math.max(...vals),pad=4,span=hi-lo||1;
+    const pts=vals.map((v,k)=>[1+k*(W-2)/(vals.length-1),pad+(1-(v-lo)/span)*(H-2*pad)]);
+    const line=monotonePath(pts),color=risk?'var(--pr-ink)':'var(--project-accent)',op=risk?1:[1,.82,.68][i%3];
+    return `<svg class="pd2-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+      <defs><linearGradient id="pd2sg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${color}" stop-opacity="${risk?.06:.14}"/><stop offset="1" style="stop-color:${color}" stop-opacity="0"/></linearGradient></defs>
+      <path d="${line}L${W-1},${H}L1,${H}Z" fill="url(#pd2sg${i})"/>
+      <path d="${line}" fill="none" style="stroke:${color}" stroke-opacity="${op}" stroke-width="1.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+  };
+  $('#pd2Dirs').innerHTML=DEMO.workstreams.map((w,i)=>{const p=pct(w.done,w.total),[label,cls]=ST[w.status];
+    return `<div class="pd2-tr" role="row"><span class="pd2-tr-name" role="cell">${esc(w.name)}</span><span role="cell">${spark(w.spark,i,w.status==='risk')}</span><span class="pd2-tr-pct" role="cell">${p===null?'—':p+'%'}</span><span role="cell"><span class="pd2-chip ${cls}">${label}</span></span><span class="pd2-tr-date" role="cell">${w.due?esc(fmtShort(w.due)):'—'}</span></div>`}).join('');
+}
+
+/* ================= E. В фокусе ================= */
+{
+  const f=DEMO.focus;
+  const ICON_WAIT='<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><rect x="3" y="3" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M11 7v4l2.5 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const ICON_RISK='<svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 3.5 19.5 18h-17Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 9v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="11" cy="15.4" r=".9" fill="currentColor"/></svg>';
+  $('#pd2Focus').innerHTML=!f
+    ?`<h3 style="margin-top:14px">Нет срочных действий</h3>`
+    :`<div class="pd2-focus-n">01</div>
+      <h3>${esc(f.title)}</h3>
+      <div class="pd2-focus-meta"><span><b>${esc(f.who)}</b></span>${f.due?`<span>Дедлайн ${esc(fmtDay(f.due))}</span>`:''}</div>
+      <div class="pd2-focus-foot">
+        <div class="pd2-counters">
+          <div class="pd2-counter">${ICON_WAIT}<div><b>${f.awaiting}</b><small>${pl(f.awaiting,'ждет','ждут','ждут')} ответа</small></div></div>
+          <div class="pd2-counter">${ICON_RISK}<div><b>${f.risks}</b><small>${pl(f.risks,'риск','риска','рисков')}</small></div></div>
+        </div>
+        <button type="button" class="pd2-cta">Открыть задачу ${ARROW_R}</button>
+      </div>`;
+}
+
+/* ================= Entrance & data reveal — once per opening =================
+   Cards: CSS keyframes (transform/opacity) driven by .pd2-enter + per-card --d in markup.
+   Data: ring via a single stroke-dashoffset transition, bars scaleX, partner bar and sparklines
+   clip-path wipe, readiness number via one finite rAF count-up. Nothing here re-runs on data refresh. */
+const ENTER={ease:'cubic-bezier(.22,1,.36,1)',done:1700,cleanup:1800};
+const root=$('.pd2'),enterReduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(el,to,suffix,delay,dur){
+  const t0=performance.now()+delay;el.textContent='0'+suffix;
+  const step=()=>{if(!el.isConnected||el.dataset.final)return; // wall clock, not the frame timestamp (it can lag in background tabs)
+    const k=Math.max(0,Math.min(1,(performance.now()-t0)/dur));
+    el.textContent=(k<1?Math.round(to*(1-Math.pow(1-k,3))):to)+suffix;
+    if(k<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step);
+}
+document.querySelectorAll('[data-enter]').forEach(el=>{const h=e=>{if(e.target!==el)return;el.classList.add('is-in');el.removeEventListener('animationend',h)};el.addEventListener('animationend',h)});
+if(enterReduce){root.classList.remove('pd2-enter')}
+else{
+  const arc=$('#pd2Ring circle:nth-of-type(2)');
+  if(arc){
+    const C=2*Math.PI*+arc.getAttribute('r'),len=parseFloat(arc.getAttribute('stroke-dasharray'));
+    arc.dataset.len=len;arc.setAttribute('stroke-dasharray',`${C.toFixed(2)} ${C.toFixed(2)}`); // same visible arc, expressed as an offset
+    arc.style.strokeDashoffset=C.toFixed(2);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{arc.style.transition=`stroke-dashoffset 700ms ${ENTER.ease} 330ms`;arc.style.strokeDashoffset=(C-len).toFixed(2)}));
+  }
+  const num=$('#pd2Ring .pd2-ring-c b'),rv=pct(DEMO.tasks.done,DEMO.tasks.total);
+  if(num&&rv!==null)countUp(num,rv,'%',330,600);
+  document.querySelectorAll('#pd2Ws .pd2-bar i').forEach((el,i)=>el.style.setProperty('--d',380+i*60+'ms'));
+  $('.pd2-seg')?.style.setProperty('--d','610ms');
+  document.querySelectorAll('#pd2Dirs .pd2-spark').forEach((el,i)=>el.style.setProperty('--d',750+i*70+'ms'));
+  setTimeout(()=>{
+    root.classList.remove('pd2-enter'); // frees hover transforms; final state == static layout
+    if(arc){const C=2*Math.PI*+arc.getAttribute('r'),fin=(C-parseFloat(arc.dataset.len)).toFixed(2);
+      if(Math.abs(parseFloat(getComputedStyle(arc).strokeDashoffset)-fin)>.5){arc.style.transition='none';arc.style.strokeDashoffset=fin}}
+    if(num&&rv!==null){num.dataset.final='1';num.textContent=rv+'%'}
+  },ENTER.cleanup);
+}
+setTimeout(()=>window.dispatchEvent(new Event('pd2:entered')),enterReduce?0:ENTER.done);
+
+/* ================= F. Динамика проекта — Slow Fluid Motion =================
+   Data anchors are fixed: every anchor is drawn exactly at (date, value). The ambient motion
+   (1) tilts Bézier control points symmetrically around each anchor, so each span between two
+   anchors swells ≤ MOTION.amp px; the swell size follows a long wave that travels left → right
+   across the whole plot once per loop; (2) a soft light rides that wave crest inside the readiness
+   fill; (3) a faint glint runs along the lines. One rAF loop, ~30 fps, chart only. */
+const SERIES=[
+  {key:'readiness',name:'Готовность',unit:'%',color:'var(--project-accent)',axis:'pct',main:true,width:2.4,fill:.30,phase:0,glint:.22,glintColor:'var(--project-accent-soft)',swell:1},
+  {key:'closed',name:'Закрытые задачи',color:'var(--project-accent-soft)',noHistory:true}, // = done/total → same as Готовность; not drawn
+  {key:'approvals',name:'Согласования',unit:'%',color:'#A9B3C7',axis:'pct',dash:true,width:1.5,fill:.07,phase:1700,swell:.6},
+  {key:'risks',name:'Риски',unit:' шт.',color:'#CE6477',axis:'cnt',width:1.5,fill:.08,phase:3200,glint:.16,glintColor:'#E59AA8',swell:.6}
+];
+const DRAWN=[...SERIES.filter(s=>!s.noHistory&&!s.main),...SERIES.filter(s=>s.main)]; // secondary first, main on top
+const TIPORDER=SERIES.filter(s=>!s.noHistory);
+const CNT_MAX=12; // right axis, шт. — its own scale, never read as %
+const PERIODS={'7Д':7,'1М':30,'3М':91,'6М':182,'1Г':365};
+const MOTION={loop:11000,fps:30,slowTau:220,resumeTau:520,resumeDelay:250,swapOut:140,
+  amp:3.5,          // max swell between two anchors, px
+  density:.085,     // …but never more than this share of the anchor spacing (dense 3М/6М data would turn into vibration)
+  kappa:.8*Math.PI, // carrier phase step per anchor: neighbouring spans swell in opposite directions → smooth, no kinks
+  wave:1.25,        // travelling envelope wavelength, × plot width: one long swell crosses the chart per loop
+  envMin:.45};      // envelope floor, so the line never goes fully still between swells
+
+/* largest ripple a unit control-point swing can produce anywhere on a segment (t ∈ [0,1], any phase) */
+const SWING=(()=>{let m=0;for(let a=0;a<72;a++){const th=a/72*2*Math.PI;for(let t=0;t<=1.0001;t+=.02)m=Math.max(m,Math.abs(3*t*(1-t)*((1-t)*Math.sin(th)-t*Math.sin(th-MOTION.kappa))))}return m})();
+const HIST=DEMO.history,NALL=HIST.readiness.length;
+const dateAt=i=>new Date(+HIST.from+i*DAY);
+const chartEl=$('.pd2-chart'),plot=$('#pd2Plot'),live=$('#pd2ChartLive');
+const store={get(k){try{return sessionStorage.getItem(k)}catch(e){return null}},set(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}};
+const reduceMQ=matchMedia('(prefers-reduced-motion: reduce)');
+const st={period:PERIODS[store.get('pd2-period')]?store.get('pd2-period'):'1М',on:new Set(DRAWN.map(s=>s.key)),sel:null,g:null};
+const mo={clock:0,speed:0,target:1,raf:0,last:0,lastDraw:0,visible:true,enabled:store.get('pd2-motion')!=='off',resumeT:0};
+
+function tangents(p){
+  const n=p.length,m=[],t=[];if(n<2)return[0];
+  for(let i=0;i<n-1;i++)m[i]=(p[i+1][1]-p[i][1])/(p[i+1][0]-p[i][0]);
+  t[0]=m[0];t[n-1]=m[n-2];
+  for(let i=1;i<n-1;i++){const a=p[i][0]-p[i-1][0],b=p[i+1][0]-p[i][0];t[i]=m[i-1]*m[i]<=0?0:3*(a+b)/((2*b+a)/m[i-1]+(b+2*a)/m[i])}
+  return t;
+}
+/* tilt[j] shifts the outgoing control point of anchor j by +tilt and the incoming one by −tilt:
+   the anchor stays put and the curve stays C1-smooth; a point at t moves by 3t(1−t)·((1−t)·tilt[i] − t·tilt[i+1]). */
+function pathFrom(p,t,tilt){
+  let d=`M${p[0][0].toFixed(2)},${p[0][1].toFixed(2)}`;
+  for(let i=0;i<p.length-1;i++){const h=(p[i+1][0]-p[i][0])/3,a=tilt?tilt[i]:0,b=tilt?tilt[i+1]:0;
+    d+=`C${(p[i][0]+h).toFixed(2)},${(p[i][1]+h*t[i]+a).toFixed(2)} ${(p[i+1][0]-h).toFixed(2)},${(p[i+1][1]-h*t[i+1]-b).toFixed(2)} ${p[i+1][0].toFixed(2)},${p[i+1][1].toFixed(2)}`}
+  return d;
+}
+const ease=x=>.5-.5*Math.cos(Math.PI*x);
+const dotHTML=ser=>`<span class="pd2-dot ${ser.dash?'is-dash':''}" style="${ser.dash?'':`background:${ser.color}`}"></span>`;
+
+/* ---------- legend ---------- */
+$('#pd2Legend').innerHTML=SERIES.map(s=>s.noHistory
+  ?`<button type="button" aria-disabled="true" aria-pressed="false" title="Тот же показатель, что «Готовность» (закрыто / всего) — отдельной истории нет"><span class="pd2-dot" style="background:${s.color};opacity:.45"></span>${s.name} <em>нет истории</em></button>`
+  :`<button type="button" data-key="${s.key}" aria-pressed="true">${dotHTML(s)}${s.name}${s.axis==='cnt'?', шт.':''}</button>`).join('');
+
+/* ---------- geometry + markup (on load, resize, period change — never per frame) ---------- */
+function build(fadeIn){
+  const W=plot.clientWidth,Hh=plot.clientHeight;if(!W)return;
+  const want=PERIODS[st.period],start=Math.max(0,NALL-1-want),end=NALL-1,n=end-start+1;
+  const L=44,R=50,T=8,B=26,pw=W-L-R,ph=Hh-T-B,base=T+ph;
+  const X=k=>L+k*pw/(n-1);
+  const Y={pct:v=>T+(1-v/100)*ph,cnt:v=>T+(1-v/CNT_MAX)*ph};
+  const amp=Math.min(MOTION.amp,pw/(n-1)*MOTION.density);
+  const A=amp/SWING; // control-point swing that yields ≤ amp px anywhere between anchors
+  const maxL=W<560?4:8,step=Math.max(1,Math.ceil((n-1)/(maxL-1)));
+  const ticks=[];for(let k=n-1;k>=0;k-=step)ticks.unshift(k);
+  if(ticks[0]!==0&&ticks[0]>=step*.6)ticks.unshift(0);
+
+  let s='<defs>';
+  DRAWN.forEach(ser=>s+=`<linearGradient id="pd2Fill-${ser.key}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${ser.color}" stop-opacity="${ser.fill}"/><stop offset="1" style="stop-color:${ser.color}" stop-opacity="0"/></linearGradient>`);
+  s+=`<radialGradient id="pd2Sheen" gradientUnits="userSpaceOnUse" cx="0" cy="${T+ph*.42}" r="${ph*1.1}"><stop offset="0" style="stop-color:var(--project-accent-soft)" stop-opacity=".32"/><stop offset="1" style="stop-color:var(--project-accent-soft)" stop-opacity="0"/></radialGradient></defs>`;
+  [0,25,50,75,100].forEach((v,k)=>{const y=Y.pct(v);
+    s+=`<line x1="${L}" x2="${L+pw}" y1="${y}" y2="${y}" stroke="#fff" stroke-opacity=".07"/>`;
+    s+=`<text class="pd2-axis" x="${L-10}" y="${y+4}" text-anchor="end">${v}%</text>`;
+    s+=`<text class="pd2-axis pd2-axis-cnt" x="${L+pw+10}" y="${y+4}">${CNT_MAX*k/4}${k===4?' шт.':''}</text>`});
+  s+=`<g class="pd2-anim">`;
+  ticks.forEach(k=>{const x=X(k);
+    s+=`<line x1="${x}" x2="${x}" y1="${T}" y2="${base}" stroke="#fff" stroke-opacity=".07"/>`;
+    s+=`<text class="pd2-axis" x="${x}" y="${Hh-4}" text-anchor="${k===0?'start':k===n-1?'end':'middle'}">${esc(fmtShort(dateAt(start+k)))}</text>`});
+  DRAWN.forEach(ser=>{
+    s+=`<g class="pd2-series${st.on.has(ser.key)?'':' is-off'}" data-key="${ser.key}"><path class="pd2-s-a" fill="url(#pd2Fill-${ser.key})"/>`;
+    if(ser.main)s+=`<path class="pd2-s-sh" fill="url(#pd2Sheen)"/>`;
+    s+=`<path class="pd2-s-l" fill="none" style="stroke:${ser.color}" stroke-width="${ser.width}" ${ser.dash?'stroke-dasharray="1 5"':''} stroke-linecap="round" stroke-linejoin="round" ${ser.main?'':'stroke-opacity=".9"'}/>`;
+    if(ser.glint)s+=`<path class="pd2-s-g" fill="none" style="stroke:${ser.glintColor}" stroke-opacity="0" stroke-width="${ser.width+3}" stroke-linecap="round"/>`;
+    s+=`</g>`});
+  s+=`</g><g class="pd2-inspect"><line class="pd2-guide" y1="${T-4}" y2="${base}" stroke="#fff" stroke-opacity=".3"/>`;
+  DRAWN.forEach(ser=>s+=`<circle data-key="${ser.key}" r="4.5" style="fill:${ser.color}" stroke="#11161E" stroke-width="2"/>`);
+  s+=`</g>`;
+  const rows=TIPORDER.map(ser=>`<div data-key="${ser.key}">${dotHTML(ser)}<span>${ser.name}</span><b></b></div>`).join('');
+  plot.innerHTML=`<svg aria-hidden="true">${s}</svg>
+    <div class="pd2-tip"><time></time>${rows}<button type="button" class="pd2-tip-x" aria-label="Снять выбор даты">×</button></div>`;
+
+  const ser=DRAWN.map(sr=>{
+    const grp=plot.querySelector(`.pd2-series[data-key="${sr.key}"]`);
+    const pts=HIST[sr.key].slice(start,end+1).map((v,k)=>[X(k),Y[sr.axis](v)]);
+    const room=pts.map(p=>Math.max(0,Math.min(1,Math.min(p[1]-T,base-p[1])/Math.max(amp,.01)))); // no ripple past 0 / 100 %
+    return {sr,grp,pts,tan:tangents(pts),room,tilt:new Array(pts.length).fill(0),
+      a:grp.querySelector('.pd2-s-a'),l:grp.querySelector('.pd2-s-l'),sh:grp.querySelector('.pd2-s-sh'),gl:grp.querySelector('.pd2-s-g'),len:0};
+  });
+  const lam=pw*MOTION.wave;
+  st.g={start,end,n,L,T,pw,ph,base,X,Y,A,lam,x0:L-(lam-pw)/2,ser,anim:plot.querySelector('.pd2-anim'),inspect:plot.querySelector('.pd2-inspect'),
+    guide:plot.querySelector('.pd2-guide'),sheen:plot.querySelector('#pd2Sheen'),tip:plot.querySelector('.pd2-tip'),clamped:NALL-1-want<0};
+  frame(true);
+  st.g.ser.forEach(o=>{if(o.gl){o.len=o.l.getTotalLength();const gl=o.len*.11;o.gl.setAttribute('stroke-dasharray',`${gl.toFixed(1)} ${(o.len+gl).toFixed(1)}`);o.glLen=gl}});
+  frame();
+  axisCnt();
+  const note=$('#pd2HistNote');note.hidden=!st.g.clamped;note.textContent=`История доступна с ${fmtLong(dateAt(0))}`;
+  plot.setAttribute('aria-label',`График «Динамика проекта», период ${st.period}, демонстрационные данные. Стрелки влево и вправо — выбор даты, Escape — снять выбор.`);
+  if(fadeIn&&!reduceMQ.matches){st.g.anim.style.opacity='0';requestAnimationFrame(()=>requestAnimationFrame(()=>{if(st.g)st.g.anim.style.opacity=''}))}
+  if(st.sel){if(st.sel.src==='hover')clearSel();else select(Math.min(end,Math.max(start,st.sel.i)),st.sel.src)}
+}
+
+/* ---------- one animation frame: only `d`, dash offset and a gradient transform change ---------- */
+function frame(still){
+  const g=st.g;if(!g)return;
+  const k=still?0:mo.speed,th=2*Math.PI*mo.clock/MOTION.loop;
+  g.ser.forEach(o=>{
+    if(!st.on.has(o.sr.key))return;
+    const ph=th+2*Math.PI*(o.sr.phase||0)/MOTION.loop;
+    for(let j=0;j<o.pts.length;j++){
+      if(!k){o.tilt[j]=0;continue}
+      const env=MOTION.envMin+(1-MOTION.envMin)*(.5+.5*Math.sin(2*Math.PI*(o.pts[j][0]-g.x0)/g.lam-ph)); // long swell, moves right
+      o.tilt[j]=g.A*k*o.sr.swell*o.room[j]*env*Math.sin(ph-MOTION.kappa*j);
+    }
+    const d=pathFrom(o.pts,o.tan,k?o.tilt:null),last=o.pts[o.pts.length-1][0],first=o.pts[0][0];
+    const area=`${d}L${last.toFixed(2)},${g.base}L${first.toFixed(2)},${g.base}Z`;
+    o.l.setAttribute('d',d);o.a.setAttribute('d',area);
+    if(o.sh){o.sh.setAttribute('d',area);
+      const u=(mo.clock/MOTION.loop+.25)%1,x=g.x0+u*g.lam; // light sits on the swell crest
+      o.sh.setAttribute('fill-opacity',(k*Math.sqrt(Math.sin(Math.PI*u))).toFixed(3)); // fades out where the crest wraps
+      g.sheen.setAttribute('gradientTransform',`translate(${x.toFixed(1)} 0) scale(2.4 1)`)}
+    if(o.gl){o.gl.setAttribute('d',d);
+      if(o.len){const p=ease(((mo.clock+o.sr.phase)/MOTION.loop)%1);
+        o.gl.setAttribute('stroke-dashoffset',(o.glLen-p*(o.len+o.glLen)).toFixed(1));
+        o.gl.setAttribute('stroke-opacity',(o.sr.glint*k).toFixed(3))}}
+  });
+}
+
+/* ---------- motion engine: single rAF, eases to a stop on inspection, sleeps when not visible ---------- */
+const allowed=()=>mo.enabled&&!reduceMQ.matches&&mo.visible&&!document.hidden;
+function kick(){if(!mo.raf&&allowed()&&(mo.target>0||mo.speed>0)){mo.last=performance.now();mo.raf=requestAnimationFrame(tick)}}
+function halt(){if(mo.raf){cancelAnimationFrame(mo.raf);mo.raf=0}}
+function tick(now){
+  mo.raf=0;if(!allowed())return;
+  const dt=Math.max(0,Math.min(100,now-mo.last));mo.last=Math.max(mo.last,now);
+  mo.speed=Math.max(0,Math.min(1,mo.speed+(mo.target-mo.speed)*(1-Math.exp(-dt/(mo.target>mo.speed?MOTION.resumeTau:MOTION.slowTau)))));
+  if(mo.target===0&&mo.speed<.004){mo.speed=0;frame();return} // settled: loop ends until resume
+  mo.clock+=dt*mo.speed;
+  if(now-mo.lastDraw>=1000/MOTION.fps-2){mo.lastDraw=now;frame()}
+  mo.raf=requestAnimationFrame(tick);
+}
+function setInspecting(on){
+  clearTimeout(mo.resumeT);
+  if(on){mo.target=0}else{mo.resumeT=setTimeout(()=>{mo.target=1;kick()},MOTION.resumeDelay)}
+}
+function toStill(){halt();mo.speed=0;frame(true)}
+
+/* ---------- inspector ---------- */
+function select(i,src,announce){
+  const g=st.g;if(!g)return;
+  st.sel={i,src};
+  const k=i-g.start,x=g.X(k);
+  g.guide.setAttribute('x1',x);g.guide.setAttribute('x2',x);
+  g.inspect.querySelectorAll('circle').forEach(c=>{const key=c.dataset.key,ser=DRAWN.find(s=>s.key===key);
+    c.style.display=st.on.has(key)?'':'none';c.setAttribute('cx',x);c.setAttribute('cy',g.Y[ser.axis](HIST[key][i]))});
+  g.tip.querySelector('time').textContent=fmtLong(dateAt(i));
+  g.tip.querySelectorAll('div[data-key]').forEach(r=>{const key=r.dataset.key,ser=DRAWN.find(s=>s.key===key);
+    r.style.display=st.on.has(key)?'':'none';r.querySelector('b').textContent=HIST[key][i]+ser.unit});
+  const tw=g.tip.offsetWidth||170,W=plot.clientWidth;
+  g.tip.style.left=Math.max(0,Math.min(W-tw,x-tw-14>=g.L?x-tw-14:x+14))+'px';g.tip.style.top=(g.T-2)+'px';
+  g.tip.classList.toggle('is-pinned',src==='pin');
+  g.tip.classList.add('is-on');g.inspect.classList.add('is-on');
+  setInspecting(true);
+  if(announce)live.textContent=`${fmtLong(dateAt(i))}: `+TIPORDER.filter(s=>st.on.has(s.key)).map(s=>`${s.name} ${HIST[s.key][i]}${s.unit}`).join(', ');
+}
+function clearSel(){
+  st.sel=null;const g=st.g;
+  if(g){g.tip.classList.remove('is-on','is-pinned');g.inspect.classList.remove('is-on')}
+  setInspecting(false);
+}
+function idxAt(e){const g=st.g,r=plot.getBoundingClientRect(),k=Math.round((e.clientX-r.left-g.L)/(g.pw/(g.n-1)));return g.start+Math.max(0,Math.min(g.n-1,k))}
+
+plot.tabIndex=0;plot.setAttribute('role','group');
+plot.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||!st.g||(st.sel&&st.sel.src!=='hover'))return;const i=idxAt(e);if(st.sel?.i!==i)select(i,'hover')});
+plot.addEventListener('pointerleave',()=>{if(st.sel?.src==='hover')clearSel()});
+plot.addEventListener('click',e=>{
+  if(!st.g)return;
+  if(e.target.closest('.pd2-tip-x')){clearSel();quietFocus=true;plot.focus({preventScroll:true});quietFocus=false;return}
+  const i=idxAt(e);
+  if(st.sel?.src==='pin'&&st.sel.i===i)clearSel();else select(i,'pin',true);
+});
+let quietFocus=false; // focus returned from the × button must not reopen the tooltip
+plot.addEventListener('focus',()=>{if(!quietFocus&&!st.sel&&st.g&&plot.matches(':focus-visible'))select(st.g.end,'key',true)});
+plot.addEventListener('blur',e=>{if(st.sel?.src==='key'&&!plot.contains(e.relatedTarget))clearSel()});
+plot.addEventListener('keydown',e=>{
+  const g=st.g;if(!g)return;
+  if(e.key==='Escape'){if(st.sel){clearSel();e.preventDefault()}return}
+  const d={ArrowLeft:-1,ArrowRight:1}[e.key];
+  if(!d&&e.key!=='Home'&&e.key!=='End')return;
+  e.preventDefault();
+  const cur=st.sel?st.sel.i:g.end;
+  const i=e.key==='Home'?g.start:e.key==='End'?g.end:Math.max(g.start,Math.min(g.end,cur+d));
+  select(i,st.sel?.src==='pin'?'pin':'key',true);
+});
+
+/* ---------- period switch: crossfade, only the latest click wins ---------- */
+let swapT=0,swapTok=0;
+const periodBtns=[...document.querySelectorAll('.pd2-periods button')];
+function syncPeriods(){periodBtns.forEach(b=>b.setAttribute('aria-pressed',String(b.textContent.trim()===st.period)))}
+periodBtns.forEach(b=>b.addEventListener('click',()=>{
+  const p=b.textContent.trim();if(!PERIODS[p]||p===st.period)return;
+  st.period=p;store.set('pd2-period',p);syncPeriods();
+  const tok=++swapTok;clearTimeout(swapT);
+  if(reduceMQ.matches||!st.g){build();return}
+  st.g.anim.style.opacity='0';
+  swapT=setTimeout(()=>{if(tok===swapTok)build(true)},MOTION.swapOut);
+}));
+
+/* ---------- legend: toggle series, at least one stays visible ---------- */
+function axisCnt(){plot.querySelectorAll('.pd2-axis-cnt').forEach(t=>t.style.opacity=st.on.has('risks')?'':'0')}
+$('#pd2Legend').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-key]');if(!b)return;
+  const key=b.dataset.key,on=st.on.has(key);
+  if(on&&st.on.size===1)return;
+  on?st.on.delete(key):st.on.add(key);
+  b.setAttribute('aria-pressed',String(!on));
+  plot.querySelector(`.pd2-series[data-key="${key}"]`)?.classList.toggle('is-off',on);
+  axisCnt();
+  if(!on)frame(!mo.speed); // bring a re-enabled line in sync with the current wave
+  if(st.sel)select(st.sel.i,st.sel.src);
+});
+
+/* ---------- motion on / pause (session only) ---------- */
+const motionBtn=$('#pd2Motion');
+function syncMotionBtn(){
+  const on=mo.enabled&&!reduceMQ.matches;
+  motionBtn.setAttribute('aria-pressed',String(on));
+  motionBtn.disabled=reduceMQ.matches;
+  motionBtn.setAttribute('aria-label',reduceMQ.matches?'Движение графика отключено системной настройкой':on?'Движение графика: вкл. Поставить на паузу':'Движение графика: пауза. Включить');
+  motionBtn.title=motionBtn.getAttribute('aria-label');
+  motionBtn.innerHTML=on
+    ?'<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.6" height="9" rx="1" fill="currentColor"/><rect x="7.4" y="1.5" width="2.6" height="9" rx="1" fill="currentColor"/></svg>'
+    :'<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4c0 .5.5.8.9.5l6.3-4.2a.6.6 0 0 0 0-1L3.9 1.3c-.4-.3-.9 0-.9.5Z" fill="currentColor"/></svg>';
+}
+motionBtn.addEventListener('click',()=>{
+  mo.enabled=!mo.enabled;store.set('pd2-motion',mo.enabled?'on':'off');syncMotionBtn();
+  if(mo.enabled){mo.target=st.sel?0:1;kick()}else toStill();
+});
+
+/* ---------- lifecycle ---------- */
+let rsRaf=0;
+const ro=new ResizeObserver(()=>{cancelAnimationFrame(rsRaf);rsRaf=requestAnimationFrame(()=>build())});
+const io=new IntersectionObserver(es=>{mo.visible=es[es.length-1].isIntersecting;mo.visible?kick():halt()});
+const onVis=()=>document.hidden?halt():kick();
+const onReduce=()=>{syncMotionBtn();reduceMQ.matches?toStill():kick()};
+syncPeriods();syncMotionBtn();build();
+ro.observe(plot);io.observe(chartEl);
+document.addEventListener('visibilitychange',onVis);
+reduceMQ.addEventListener?.('change',onReduce);
+if(root.classList.contains('pd2-enter')){mo.target=0;window.addEventListener('pd2:entered',()=>{if(!st.sel)mo.target=1;kick()},{once:true})}else kick();
+/* for integration later: tear everything down (no orphan rAF / observers / listeners) */
+window.__pd2Chart={destroy(){halt();clearTimeout(mo.resumeT);clearTimeout(swapT);ro.disconnect();io.disconnect();document.removeEventListener('visibilitychange',onVis);reduceMQ.removeEventListener?.('change',onReduce)},
+  get state(){return {period:st.period,on:[...st.on],sel:st.sel,speed:+mo.speed.toFixed(3),running:!!mo.raf,enabled:mo.enabled,visible:mo.visible}}};
+})();
+</script>
+</body>
+</html>
