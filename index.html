@@ -502,6 +502,15 @@ a.vibe-card:hover{transform:translateY(-4px)}
 @media(max-width:760px){.xp2 h3{font-size:23px}.xp2-head .xp-cat{width:56px;height:56px}.xp-sum strong{font-size:28px}}
 .h3-role{font-size:clamp(20px,1.9vw,26px);line-height:1.2;letter-spacing:-.02em;font-weight:500;text-align:right;margin:0 0 18px}
 @media(max-width:760px){.h3-role{font-size:13px;margin-bottom:10px}}
+.brands{margin-top:72px;padding-top:28px;border-top:1px solid var(--line)}
+.brands-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.brands-head h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:1.4px;font-weight:600}
+.brands-head span{font-size:14px;color:var(--muted)}
+.brands-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 0;font-size:clamp(20px,2.3vw,32px);line-height:1.25;letter-spacing:-.02em;font-weight:500}
+.brands-list li{transition:color .2s}
+.brands-list li:hover{color:var(--blue)}
+.brands-list li:not(:last-child)::after{content:"·";color:var(--blue);margin:0 .38em}
+@media(max-width:760px){.brands{margin-top:48px}.brands-list{font-size:20px}}
 </style>
 </head>
 <body>
@@ -551,6 +560,10 @@ a.vibe-card:hover{transform:translateY(-4px)}
      <div class="filters" role="group" aria-label="Фильтр проектов"></div>
     </div>
     <div class="bento" id="cards"></div>
+    <div class="brands" aria-labelledby="brands-h">
+     <div class="brands-head"><h3 id="brands-h">Бренды и партнеры</h3><span>31 бренд в партнерских проектах и интеграциях</span></div>
+     <ul class="brands-list"><li>РОСТ</li><li>Авито</li><li>HONOR</li><li>ЛизаАлерт</li><li>BIC</li><li>Kinder</li><li>Кенгуру</li><li>Мозгва</li><li>МЕДСИ</li><li>R.O.C.S.</li><li>Royal&nbsp;Canin</li><li>Фармстандарт</li><li>Т-Банк</li><li>Ozon</li><li>Клинский</li><li>Moriki&nbsp;Doriki</li><li>Л’Этуаль</li><li>ФрутоНяня</li><li>ErichKrause</li><li>BRandICE</li><li>Abrau&nbsp;Junior</li><li>Альпина&nbsp;Паблишер</li><li>РОСМЭН</li><li>Яндекс&nbsp;Лавка</li><li>Яндекс&nbsp;KIT</li><li>Объединенные&nbsp;кондитеры</li><li>Б.Ю.&nbsp;Александров</li><li>Периодика</li><li>Security&nbsp;Vision</li><li>YADRO</li><li>Кант</li></ul>
+    </div>
    </div>
   </section>
 
